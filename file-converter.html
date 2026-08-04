@@ -276,6 +276,14 @@
     font-size: 12.5px;
     color: var(--text-muted);
   }
+  footer p { margin: 0 0 6px; }
+  footer p:last-child { margin-bottom: 0; }
+  footer a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  footer a:hover { text-decoration: underline; }
 
   @media (max-width: 580px) {
     .file-card { flex-wrap: wrap; }
@@ -369,6 +377,7 @@
 
   <footer>
     <p>Everything runs directly inside your browser using client-side processing. Large video files may take a moment to render depending on your machine.</p>
+    <p><a href="https://github.com/BlueCat-prjct/File-Converter" target="_blank" rel="noopener">View on GitHub</a></p>
   </footer>
 </div>
 

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>File Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f6f0;
+    --surface: #ffffff;
+    --surface-hover: #f3efe6;
+    --border: #e2ded4;
+    --border-focus: #111111;
+    --text: #2c2a29;
+    --text-muted: #736f68;
+    --accent: #d97736;
+    --accent-hover: #c46222;
+    --accent-light: #fbf0e8;
+    --success: #2d6a4f;
+    --success-light: #eaf4ee;
+    --danger: #bc4749;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 20px -2px rgba(44, 42, 41, 0.05);
+    --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 60px 20px 80px;
+  }
+
+  /* ---- Header ---- */
+  header { margin-bottom: 32px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+    color: var(--text);
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  /* ---- Dropzone ---- */
+  .dropzone {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow);
+  }
+  .dropzone:hover, .dropzone.drag {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: scale(0.995);
+  }
+  .dz-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    background: var(--bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+  .dz-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .dz-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  #file-input { display: none; }
+
+  /* ---- Settings ---- */
+  .settings-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    box-shadow: var(--shadow);
+  }
+  .setting-item { display: flex; flex-direction: column; gap: 6px; }
+  .setting-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  select, input[type="range"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+  }
+  select:focus { border-color: var(--border-focus); }
+  .range-row { display: flex; align-items: center; gap: 10px; }
+  .range-row input { flex: 1; }
+  .range-val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--accent); }
+
+  /* ---- Controls Bar ---- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 28px 0 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .file-count { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+  .actions { display: flex; align-items: center; gap: 10px; }
+
+  button {
+    font-family: var(--font);
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---- List Queue ---- */
+  #queue { display: flex; flex-direction: column; gap: 10px; }
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+  }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .file-meta { font-size: 12px; color: var(--text-muted); }
+
+  .file-action { display: flex; align-items: center; gap: 10px; }
+  .target-select { padding: 6px 10px; font-size: 12.5px; }
+  
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { background: var(--bg); }
+
+  .btn-download {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid rgba(45, 106, 79, 0.2);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+  }
+  .btn-download:hover { background: #d8ece0; }
+
+  .btn-remove {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 6px 8px;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 6px;
+  }
+  .btn-remove:hover { color: var(--danger); background: var(--bg); }
+
+  .status-spinner {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-light);
+    border-top-color: var(--accent);
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .file-error {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 2px;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 580px) {
+    .file-card { flex-wrap: wrap; }
+    .file-action { width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="badge"><span class="dot"></span> Local File Toolkit · Private & Browser-based</div>
+    <h1>Universal File Converter</h1>
+    <p class="subtitle">Convert videos, audio tracks, images, and documents locally without uploading your files.</p>
+  </header>
+
+  <div class="dropzone" id="dropzone" tabindex="0" role="button">
+    <div class="dz-icon">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+    </div>
+    <div class="dz-title">Choose files or drag & drop them here</div>
+    <div class="dz-sub">Supports Videos (MP4, WebM, MOV), Audio (MP3, WAV, OGG), Images, and Documents</div>
+  </div>
+  <input type="file" id="file-input" multiple />
+
+  <!-- Options -->
+  <div class="settings-box">
+    <div class="setting-item">
+      <label for="cfg-video-res">Video Resolution</label>
+      <select id="cfg-video-res">
+        <option value="original" selected>Original</option>
+        <option value="1080">1080p HD</option>
+        <option value="720">720p</option>
+        <option value="480">480p</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      <label for="cfg-bitrate">Audio Quality</label>
+      <select id="cfg-bitrate">
+        <option value="128">128 kbps</option>
+        <option value="192">192 kbps</option>
+        <option value="320" selected>320 kbps (High Quality)</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      <label for="cfg-quality">Image Quality</label>
+      <div class="range-row">
+        <input type="range" id="cfg-quality" min="10" max="100" value="90" />
+        <span class="range-val" id="cfg-quality-val">90%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <span class="file-count" id="queue-count">0 files added</span>
+    <div class="actions">
+      <select id="global-format-select" disabled style="padding: 8px 10px; font-size: 13px;">
+        <option value="" disabled selected>Convert all to...</option>
+        <optgroup label="Video">
+          <option value="webm">WebM Video</option>
+          <option value="mp4">MP4 Video</option>
+          <option value="gif">Animated GIF</option>
+        </optgroup>
+        <optgroup label="Audio">
+          <option value="mp3">MP3</option>
+          <option value="wav">WAV</option>
+          <option value="ogg">OGG</option>
+        </optgroup>
+        <optgroup label="Images">
+          <option value="png">PNG</option>
+          <option value="jpg">JPEG</option>
+          <option value="webp">WebP</option>
+          <option value="bmp">BMP</option>
+          <option value="ico">Favicon (.ico)</option>
+        </optgroup>
+        <optgroup label="Documents & Data">
+          <option value="txt">Text (.txt)</option>
+          <option value="md">Markdown (.md)</option>
+          <option value="html">HTML (.html)</option>
+          <option value="json">JSON (.json)</option>
+          <option value="csv">CSV (.csv)</option>
+          <option value="pdf">PDF</option>
+        </optgroup>
+      </select>
+      <button id="convert-all" class="btn-primary" disabled>Convert All</button>
+    </div>
+  </div>
+
+  <div id="queue"></div>
+  <div id="empty-state" class="empty">No files added yet</div>
+
+  <footer>
+    <p>Everything runs directly inside your browser using client-side processing. Large video files may take a moment to render depending on your machine.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const $ = (sel, ctx=document) => ctx.querySelector(sel);
+const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+const _scriptCache = {};
+function loadScript(src){
+  if(_scriptCache[src]) return _scriptCache[src];
+  _scriptCache[src] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => { delete _scriptCache[src]; reject(new Error('Failed loading script')); };
+    document.head.appendChild(s);
+  });
+  return _scriptCache[src];
+}
+
+let _gifWorkerUrl = null;
+async function getGifWorkerUrl(){
+  if(_gifWorkerUrl) return _gifWorkerUrl;
+  const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+  const text = await res.text();
+  const blob = new Blob([text], { type: 'application/javascript' });
+  _gifWorkerUrl = URL.createObjectURL(blob);
+  return _gifWorkerUrl;
+}
+
+function extOf(name){
+  const m = /\.([a-z0-9]+)$/i.exec(name || '');
+  return m ? m[1].toLowerCase() : '';
+}
+function normalizeExt(rawExt){
+  if(rawExt === 'markdown') return 'md';
+  if(rawExt === 'htm') return 'html';
+  if(rawExt === 'jpeg') return 'jpg';
+  return rawExt;
+}
+function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ''); }
+function formatBytes(n){
+  if(!n) return '0 B';
+  if(n < 1024) return n + ' B';
+  if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/1024/1024).toFixed(1) + ' MB';
+}
+function uid(){ return Math.random().toString(36).slice(2, 10); }
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+const CATEGORIES = {
+  video: {
+    exts: ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', '3gp', 'm4v'],
+    outputs: [
+      {ext: 'webm', label: 'WebM'},
+      {ext: 'mp4', label: 'MP4'},
+      {ext: 'gif', label: 'GIF'},
+      {ext: 'mp3', label: 'Audio (MP3)'},
+      {ext: 'wav', label: 'Audio (WAV)'}
+    ]
+  },
+  image: {
+    exts: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'svg', 'ico', 'avif'],
+    outputs: [
+      {ext: 'png', label: 'PNG'},
+      {ext: 'jpg', label: 'JPEG'},
+      {ext: 'webp', label: 'WebP'},
+      {ext: 'bmp', label: 'BMP'},
+      {ext: 'ico', label: 'ICO'}
+    ]
+  },
+  audio: {
+    exts: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'],
+    outputs: [
+      {ext: 'wav', label: 'WAV'},
+      {ext: 'mp3', label: 'MP3'},
+      {ext: 'ogg', label: 'OGG'}
+    ]
+  },
+  document: {
+    exts: ['txt', 'md', 'html', 'json', 'csv', 'pdf'],
+    outputs: [
+      {ext: 'txt', label: 'Text'},
+      {ext: 'md', label: 'Markdown'},
+      {ext: 'html', label: 'HTML'},
+      {ext: 'json', label: 'JSON'},
+      {ext: 'csv', label: 'CSV'},
+      {ext: 'pdf', label: 'PDF'}
+    ]
+  }
+};
+
+function detectCategory(ext){
+  for(const key in CATEGORIES){ if(CATEGORIES[key].exts.includes(ext)) return key; }
+  return null;
+}
+
+/* Video Processing Engine */
+async function convertVideo(file, targetExt, options={}){
+  if(targetExt === 'mp3' || targetExt === 'wav'){
+    return convertAudio(file, targetExt, options);
+  }
+
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  const videoUrl = URL.createObjectURL(file);
+  video.src = videoUrl;
+
+  await new Promise((res, rej) => {
+    video.onloadedmetadata = () => res();
+    video.onerror = () => rej(new Error('Could not read video stream'));
+  });
+
+  let targetWidth = video.videoWidth;
+  let targetHeight = video.videoHeight;
+  if (options.res && options.res !== 'original') {
+    const h = parseInt(options.res, 10);
+    if(video.videoHeight > h) {
+      targetHeight = h;
+      targetWidth = Math.round((video.videoWidth * h) / video.videoHeight);
+    }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext('2d');
+
+  if (targetExt === 'webm' || targetExt === 'mp4') {
+    const canvasStream = canvas.captureStream(30);
+    let combinedStream = canvasStream;
+    try {
+      // Route the source video's audio into the recorded stream so exports
+      // keep their sound instead of coming out silent.
+      const audioCtx = getAudioCtx();
+      const audioSource = audioCtx.createMediaElementSource(video);
+      const audioDest = audioCtx.createMediaStreamDestination();
+      audioSource.connect(audioDest);
+      if (audioDest.stream.getAudioTracks().length) {
+        combinedStream = new MediaStream([
+          ...canvasStream.getVideoTracks(),
+          ...audioDest.stream.getAudioTracks()
+        ]);
+      }
+    } catch (e) {
+      // No audio track, or capture unsupported here — fall back to video-only.
+    }
+
+    const mimeType = (targetExt === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')) 
+                     ? 'video/mp4' : 'video/webm';
+    const recorder = new MediaRecorder(combinedStream, { mimeType });
+    const chunks = [];
+    recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+
+    return new Promise((resolve, reject) => {
+      recorder.onstop = () => {
+        URL.revokeObjectURL(videoUrl);
+        resolve(new Blob(chunks, { type: mimeType }));
+      };
+      recorder.onerror = reject;
+
+      recorder.start();
+      video.play();
+
+      function drawFrame() {
+        if (video.paused || video.ended) {
+          recorder.stop();
+          return;
+        }
+        ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+        requestAnimationFrame(drawFrame);
+      }
+      drawFrame();
+    });
+  }
+
+  if (targetExt === 'gif') {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
+    const workerScript = await getGifWorkerUrl();
+
+    video.currentTime = 0;
+    const duration = Math.min(video.duration, 10);
+    const fps = 10;
+    const step = 1 / fps;
+    const gif = new window.GIF({
+      workers: 2, quality: 10, width: targetWidth, height: targetHeight, workerScript
+    });
+
+    while (video.currentTime < duration) {
+      await new Promise(r => { video.onseeked = r; video.currentTime += step; });
+      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+      gif.addFrame(ctx, { copy: true, delay: 1000 / fps });
+    }
+    URL.revokeObjectURL(videoUrl);
+
+    return new Promise((resolve, reject) => {
+      gif.on('finished', blob => resolve(blob));
+      gif.on('abort', () => reject(new Error('GIF encoding was aborted')));
+      gif.render();
+    });
+  }
+}
+
+/* Image Processing Engine */
+async function convertImage(file, targetExt, options={}){
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  URL.revokeObjectURL(url);
+
+  let w = img.width, h = img.height;
+  if(targetExt === 'ico') { w = 32; h = 32; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+
+  if (targetExt === 'ico') {
+    const pngBlob = await new Promise((res, rej) =>
+      canvas.toBlob(b => b ? res(b) : rej(new Error('Image conversion failed')), 'image/png'));
+    return pngToIco(pngBlob, 32);
+  }
+
+  const quality = (options.quality || 90) / 100;
+  let mime = `image/${targetExt}`;
+  if(targetExt === 'jpg') mime = 'image/jpeg';
+  
+  return new Promise((res, rej) => {
+    canvas.toBlob(b => b ? res(b) : rej(new Error('Image conversion failed')), mime, quality);
+  });
+}
+
+// Wraps a PNG blob in a minimal, valid single-image .ico container
+// (PNG-in-ICO is supported by every modern OS and browser).
+async function pngToIco(pngBlob, size){
+  const pngBytes = new Uint8Array(await pngBlob.arrayBuffer());
+  const HEADER = 6, DIR_ENTRY = 16;
+  const out = new Uint8Array(HEADER + DIR_ENTRY + pngBytes.length);
+  const view = new DataView(out.buffer);
+
+  view.setUint16(0, 0, true);          // reserved
+  view.setUint16(2, 1, true);          // type: 1 = icon
+  view.setUint16(4, 1, true);          // image count
+  out[6] = size >= 256 ? 0 : size;     // width (0 means 256)
+  out[7] = size >= 256 ? 0 : size;     // height
+  out[8] = 0;                          // color palette
+  out[9] = 0;                          // reserved
+  view.setUint16(10, 1, true);         // color planes
+  view.setUint16(12, 32, true);        // bits per pixel
+  view.setUint32(14, pngBytes.length, true);       // image data size
+  view.setUint32(18, HEADER + DIR_ENTRY, true);    // offset to image data
+  out.set(pngBytes, HEADER + DIR_ENTRY);
+
+  return new Blob([out], { type: 'image/x-icon' });
+}
+
+/* Audio Processing Engine */
+let _audioCtx = null;
+function getAudioCtx(){
+  if(!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function floatTo16BitPCM(channelData){
+  const out = new Int16Array(channelData.length);
+  for(let i = 0; i < channelData.length; i++){
+    const s = Math.max(-1, Math.min(1, channelData[i]));
+    out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  return out;
+}
+
+// Plays an AudioBuffer through a real-time MediaRecorder to produce a
+// genuinely-encoded file in whatever mimeType the browser supports.
+async function encodeAudioViaMediaRecorder(audioBuffer, mimeType){
+  const ctx = getAudioCtx();
+  const dest = ctx.createMediaStreamDestination();
+  const source = ctx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(dest);
+  const recorder = new MediaRecorder(dest.stream, { mimeType });
+  const chunks = [];
+  recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+
+  return new Promise((resolve, reject) => {
+    recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+    recorder.onerror = reject;
+    recorder.start();
+    source.start();
+    source.onended = () => recorder.stop();
+  });
+}
+
+async function convertAudio(file, targetExt, options={}){
+  const ctx = getAudioCtx();
+  const buf = await file.arrayBuffer();
+  const audioBuffer = await ctx.decodeAudioData(buf);
+
+  if(targetExt === 'wav'){
+    return encodeWav(audioBuffer);
+  }
+
+  if(targetExt === 'mp3'){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js');
+    const numChannels = Math.min(2, audioBuffer.numberOfChannels);
+    const encoder = new window.lamejs.Mp3Encoder(numChannels, audioBuffer.sampleRate, options.bitrate || 192);
+    const left = floatTo16BitPCM(audioBuffer.getChannelData(0));
+    const right = numChannels > 1 ? floatTo16BitPCM(audioBuffer.getChannelData(1)) : null;
+    const sampleBlockSize = 1152;
+    const mp3Data = [];
+
+    for (let i = 0; i < left.length; i += sampleBlockSize) {
+      const leftChunk = left.subarray(i, i + sampleBlockSize);
+      const rightChunk = right ? right.subarray(i, i + sampleBlockSize) : undefined;
+      const encoded = numChannels > 1 ? encoder.encodeBuffer(leftChunk, rightChunk) : encoder.encodeBuffer(leftChunk);
+      if (encoded.length > 0) mp3Data.push(encoded);
+      if(i % (sampleBlockSize * 50) === 0) await yieldToMain();
+    }
+    const end = encoder.flush();
+    if(end.length > 0) mp3Data.push(end);
+    return new Blob(mp3Data, {type: 'audio/mp3'});
+  }
+
+  if(targetExt === 'ogg'){
+    // Real Ogg/Opus via MediaRecorder where the browser supports it —
+    // no more silently handing back mp3 data with an .ogg label.
+    if(window.MediaRecorder && MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')){
+      return encodeAudioViaMediaRecorder(audioBuffer, 'audio/ogg;codecs=opus');
+    }
+    throw new Error("This browser can't encode OGG. Try MP3 or WAV instead.");
+  }
+}
+
+function encodeWav(audioBuffer){
+  const numCh = audioBuffer.numberOfChannels, sampleRate = audioBuffer.sampleRate, numFrames = audioBuffer.length;
+  const dataSize = numFrames * numCh * 2, buf = new ArrayBuffer(44 + dataSize), view = new DataView(buf);
+  const writeStr = (off, str) => { for(let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); };
+
+  writeStr(0, 'RIFF'); view.setUint32(4, 36 + dataSize, true); writeStr(8, 'WAVE');
+  writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true); view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numCh * 2, true); view.setUint16(32, numCh * 2, true);
+  view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  for(let i = 0; i < numFrames; i++){
+    for(let c = 0; c < numCh; c++){
+      let s = Math.max(-1, Math.min(1, audioBuffer.getChannelData(c)[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return new Blob([buf], {type:'audio/wav'});
+}
+
+/* Document & Data Processing Engine */
+async function convertDocument(file, targetExt){
+  const text = await file.text();
+  
+  if(targetExt === 'txt') return new Blob([text], {type: 'text/plain'});
+  if(targetExt === 'md') return new Blob([text], {type: 'text/markdown'});
+  if(targetExt === 'html') return new Blob([`<!DOCTYPE html>\n<html><body><pre>${text}</pre></body></html>`], {type: 'text/html'});
+  
+  if(targetExt === 'json'){
+    let obj = { content: text };
+    try { obj = JSON.parse(text); } catch(e){}
+    return new Blob([JSON.stringify(obj, null, 2)], {type: 'application/json'});
+  }
+
+  if(targetExt === 'csv'){
+    const lines = text.split('\n').map(l => `"${l.replace(/"/g, '""')}"`).join('\n');
+    return new Blob([lines], {type: 'text/csv'});
+  }
+
+  if(targetExt === 'pdf'){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    const doc = new window.jspdf.jsPDF();
+    const lines = doc.splitTextToSize(text, 180);
+    doc.text(lines, 10, 10);
+    return doc.output('blob');
+  }
+}
+
+// State & UI Controller
+const state = { items: [] };
+
+function processFileList(fileList){
+  for(const file of fileList){
+    const ext = normalizeExt(extOf(file.name));
+    const cat = detectCategory(ext);
+    state.items.push({
+      id: uid(), file, category: cat,
+      targetExt: cat ? (CATEGORIES[cat].outputs.find(o => o.ext !== ext) || CATEGORIES[cat].outputs[0]).ext : null,
+      status: cat ? 'idle' : 'unsupported'
+    });
+  }
+  renderQueue();
+}
+
+function renderQueue(){
+  const list = $('#queue');
+  list.innerHTML = '';
+  $('#empty-state').style.display = state.items.length ? 'none' : 'block';
+  $('#queue-count').textContent = `${state.items.length} ${state.items.length === 1 ? 'file' : 'files'}`;
+  
+  $('#convert-all').disabled = !state.items.some(i => i.status === 'idle' || i.status === 'error');
+  $('#global-format-select').disabled = !state.items.length;
+
+  for(const item of state.items){
+    const card = document.createElement('div');
+    card.className = 'file-card';
+
+    const info = document.createElement('div');
+    info.className = 'file-info';
+    let metaLine = formatBytes(item.file.size);
+    if(item.status === 'unsupported') metaLine += ' · Unsupported file type';
+    info.innerHTML = `
+      <div class="file-name">${item.file.name}</div>
+      <div class="file-meta">${metaLine}</div>
+      ${item.status === 'error' ? `<div class="file-error">Failed: ${item.error || 'unknown error'}</div>` : ''}
+    `;
+
+    const action = document.createElement('div');
+    action.className = 'file-action';
+
+    if(item.status === 'converting'){
+      action.innerHTML = `<span class="status-spinner"><span class="spinner"></span> Converting...</span>`;
+    } else if(item.status === 'done'){
+      const dl = document.createElement('a');
+      dl.className = 'btn-download';
+      dl.textContent = `Save .${item.targetExt}`;
+      dl.onclick = (e) => { e.preventDefault(); downloadBlob(item.blob, `${baseName(item.file.name)}.${item.targetExt}`); };
+      action.appendChild(dl);
+    } else if(item.category) {
+      const sel = document.createElement('select');
+      sel.className = 'target-select';
+      CATEGORIES[item.category].outputs.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.ext; opt.textContent = `to .${o.ext}`;
+        if(o.ext === item.targetExt) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.onchange = (e) => item.targetExt = e.target.value;
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-outline';
+      btn.textContent = 'Convert';
+      btn.onclick = () => convertOne(item.id);
+
+      action.appendChild(sel);
+      action.appendChild(btn);
+    }
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-remove';
+    removeBtn.innerHTML = '×';
+    removeBtn.onclick = () => {
+      state.items = state.items.filter(i => i.id !== item.id);
+      renderQueue();
+    };
+
+    action.appendChild(removeBtn);
+    card.appendChild(info);
+    card.appendChild(action);
+    list.appendChild(card);
+  }
+}
+
+async function convertOne(id){
+  const item = state.items.find(i => i.id === id);
+  if(!item) return;
+  item.status = 'converting';
+  item.error = null;
+  renderQueue();
+  await yieldToMain();
+
+  try {
+    const opts = {
+      bitrate: parseInt($('#cfg-bitrate').value, 10),
+      res: $('#cfg-video-res').value,
+      quality: parseInt($('#cfg-quality').value, 10)
+    };
+
+    if(item.category === 'video') item.blob = await convertVideo(item.file, item.targetExt, opts);
+    else if(item.category === 'image') item.blob = await convertImage(item.file, item.targetExt, opts);
+    else if(item.category === 'audio') item.blob = await convertAudio(item.file, item.targetExt, opts);
+    else if(item.category === 'document') item.blob = await convertDocument(item.file, item.targetExt);
+    item.status = 'done';
+  } catch(e) {
+    item.status = 'error';
+    item.error = (e && e.message) ? e.message : 'Conversion failed';
+  }
+  renderQueue();
+}
+
+function init(){
+  const dropzone = $('#dropzone');
+  const fileInput = $('#file-input');
+
+  // Click to open file dialog
+  dropzone.onclick = () => fileInput.click();
+  fileInput.onchange = (e) => {
+    processFileList(e.target.files);
+    fileInput.value = '';
+  };
+
+  // Prevent browser default behavior for drag events globally
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    window.addEventListener(eventName, (e) => e.preventDefault(), false);
+  });
+
+  // Drag visual effects & drop listeners
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => dropzone.classList.add('drag'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag'), false);
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length) {
+      processFileList(dt.files);
+    }
+  }, false);
+
+  dropzone.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+
+  $('#cfg-quality').oninput = (e) => $('#cfg-quality-val').textContent = `${e.target.value}%`;
+  $('#convert-all').onclick = async () => {
+    for(const item of state.items.filter(i => i.status === 'idle' || i.status === 'error')) {
+      await convertOne(item.id);
+    }
+  };
+
+  $('#global-format-select').onchange = (e) => {
+    const fmt = e.target.value;
+    state.items.forEach(i => {
+      if(i.category && CATEGORIES[i.category].outputs.some(o => o.ext === fmt)) i.targetExt = fmt;
+    });
+    renderQueue();
+  };
+}
+
+document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>

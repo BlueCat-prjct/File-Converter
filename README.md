@@ -1,2 +1,2 @@
 # File-Converter
-A website with various conversions tools
+Browser-based file converter for video, audio, images, and documents — no uploads, everything runs client-side.
